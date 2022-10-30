@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.20)
+include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+project(PicoFlightSoftware)
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
+
+include_directories("include")
+file(GLOB SOURCES "src/*.cxx")
+add_executable(PicoFlightSoftware ${SOURCES})
+pico_sdk_init()
+target_link_libraries(PicoFlightSoftware pico_stdlib pico_runtime pico_stdio_usb pico_multicore hardware_pwm hardware_uart)
+pico_add_extra_outputs(PicoFlightSoftware)

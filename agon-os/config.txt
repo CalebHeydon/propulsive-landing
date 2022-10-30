@@ -1,0 +1,15 @@
+[all]
+arm_64bit=1
+dtparam=audio=off,i2c_arm=on,spi=off
+dtoverlay=mmc
+dtoverlay=disable-bt
+device_tree_address=0x4000
+kernel=u-boot.bin
+start_x=1
+gpu_mem=128
+baudrate=115200
+console=ttyu0,115200
+
+[pi4]
+hdmi_safe=1
+armstub=armstub8-gic.bin

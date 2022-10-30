@@ -1,0 +1,47 @@
+#!/bin/sh
+
+freebsd-update fetch
+freebsd-update install -F
+pkg install -y git curl nano sudo screen zsh cmake ninja python3 python py39-pip ffmpeg v4l-utils opencv
+
+sed -i "" "s/# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/g" /usr/local/etc/sudoers
+
+echo 'export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"' > /usr/local/etc/zshenv
+echo 'export PROMPT="%n@%m:%~ %# "' >> /usr/local/etc/zshenv
+chsh -s /usr/local/bin/zsh
+
+pip install wheel
+pip install ffmpeg-python
+
+echo "kern.elf64.aslr.enable=1" >> /etc/sysctl.conf
+echo "kern.elf32.aslr.enable=1" >> /etc/sysctl.conf
+sysctl kern.elf64.aslr.enable=1
+sysctl kern.elf32.aslr.enable=1
+
+echo "fdesc			/dev/fd	fdescfs	rw		0	0" >> /etc/fstab
+echo "proc			/proc	procfs	rw		0	0" >> /etc/fstab
+mount -t fdescfs fdesc /dev/fd
+mount -t procfs proc /proc
+
+mkdir /compat
+mkdir /compat/linux
+mkdir /compat/linux/dev
+mkdir /compat/linux/proc
+mkdir /compat/linux/sys
+echo 'linux_enable="YES"' >> /etc/rc.conf
+service linux start
+
+echo 'powerd_enable="YES"' >> /etc/rc.conf
+service powerd start
+
+echo "block all
+set skip on lo0
+pass in inet proto tcp to port { 22 }
+pass in inet6 proto tcp to port { 22 }
+pass in proto icmp
+pass proto ipv6-icmp from any to any
+pass out all" > /etc/pf.conf
+echo "pf_enable=\"YES\"
+pflog_enable=\"YES\"" >> /etc/rc.conf
+service pflog start
+service pf start

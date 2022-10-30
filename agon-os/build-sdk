@@ -1,0 +1,52 @@
+#!/bin/sh
+
+ARCH=aarch64
+ARCH2=arm64
+VERSION_NUM=13.1
+VERSION=$VERSION_NUM-RELEASE
+PKG_VERSION=13
+SDK=sdk-$VERSION-$ARCH
+TAR=bsdtar
+
+rm -rf tmp pkgs $SDK clang clang++
+mkdir tmp
+mkdir pkgs
+mkdir $SDK
+
+echo "fetching packagesite.txz"
+curl -L https://pkg.freebsd.org/FreeBSD:$PKG_VERSION:$ARCH/latest/packagesite.txz -o tmp/packagesite.txz
+cd tmp
+$TAR -xf packagesite.txz
+cd ..
+
+echo "fetching base.tgz"
+curl -L https://download.freebsd.org/releases/$ARCH2/$VERSION/base.txz -o tmp/base.tgz
+cd $SDK
+$TAR -xf ../tmp/base.tgz
+cd ..
+
+fetch_pkg(){
+	echo "fetching $1"
+	PKG_NAME=$(python pkg_name.py $1)
+	curl -L https://pkg.freebsd.org/FreeBSD:$PKG_VERSION:$ARCH/latest/All/$PKG_NAME -o pkgs/$1.pkg
+
+	cd $SDK
+	$TAR -xf ../pkgs/$1.pkg
+	cd ..
+}
+
+fetch_pkg ffmpeg
+fetch_pkg opencv
+
+rm -rf tmp
+cd $SDK
+rm -rf bin boot dev etc libexec media mnt net proc rescue root sbin tmp var +COMPACT_MANIFEST +MANIFEST sys usr/bin usr/lib32 usr/libexec usr/obj usr/sbin usr/share usr/src usr/tests usr/local/bin usr/local/etc usr/local/man usr/local/sbin usr/local/share
+cd ..
+
+echo "creating clang/clang++ wrappers"
+echo "#!/bin/sh" > clang
+echo "clang -target $ARCH-unknown-freebsd$VERSION_NUM --sysroot=$(pwd)/sdk-$VERSION-$ARCH -fuse-ld=lld -I$(pwd)/sdk-$VERSION-$ARCH/usr/local/include -I$(pwd)/sdk-$VERSION-$ARCH/usr/local/include/opencv4 -L$(pwd)/sdk-$VERSION-$ARCH/usr/local/lib \"\$@\"" >> clang
+chmod +x clang
+echo "#!/bin/sh" > clang++
+echo "clang++ -target $ARCH-unknown-freebsd$VERSION_NUM --sysroot=$(pwd)/sdk-$VERSION-$ARCH -fuse-ld=lld -I$(pwd)/sdk-$VERSION-$ARCH/usr/local/include -I$(pwd)/sdk-$VERSION-$ARCH/usr/local/include/opencv4 -L$(pwd)/sdk-$VERSION-$ARCH/usr/local/lib \"\$@\"" >> clang++
+chmod +x clang++

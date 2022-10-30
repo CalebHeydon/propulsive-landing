@@ -1,0 +1,17 @@
+cmake_minimum_required(VERSION 3.20)
+project(FlightSoftware)
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+	find_package(OpenCV REQUIRED)
+	include_directories("include" ${OpenCV_INCLUDE_DIRS})
+else ()
+	set(CMAKE_C_COMPILER "../agon-os/clang")
+	set(CMAKE_CXX_COMPILER "../agon-os/clang++")
+	include_directories("include")
+endif ()
+
+file(GLOB SOURCES "src/*.cxx")
+add_executable(FlightSoftware ${SOURCES})
+target_link_libraries(FlightSoftware opencv_core)
